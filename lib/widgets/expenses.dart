@@ -19,38 +19,63 @@ class _ExpensesState extends State<Expenses> {
       isDismissible: true,
       isScrollControlled: true,
       context: context,
-      builder: (ctx) => NewExpense(
-        onAddExpense: _addExpense,
-      ),
+      builder: (ctx) => NewExpense(onAddExpense: _addExpense),
     );
   }
 
   void _addExpense(Expense expense) {
-    setState(
-      () {
-        _registeredExpenses.add(expense);
-      },
-    );
+    setState(() {
+      _registeredExpenses.add(expense);
+    });
   }
 
   void _removeExpense(Expense expense) {
+    final expenseIndex = _registeredExpenses.indexOf(expense);
+
     setState(() {
       _registeredExpenses.remove(expense);
     });
+
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        duration: Duration(seconds: 3),
+        content: const Text('Expense deleted.'),
+        action: SnackBarAction(
+          label: 'Undo',
+          onPressed:
+              () => setState(() {
+                _registeredExpenses.insert(expenseIndex, expense);
+              }),
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    Widget mainContent =
+        _registeredExpenses.isEmpty
+            ? const Center(
+              child: Text(
+                'No Expenses found ! Start adding some.',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  color: Color.fromARGB(109, 43, 38, 38),
+                ),
+              ),
+            )
+            : ExpensesList(
+              expenses: _registeredExpenses,
+              onRemoveExpense: _removeExpense,
+            );
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.greenAccent,
         foregroundColor: Colors.white,
-        title: const Text(
-          'ExpenseTracker App',
-          style: TextStyle(
-            fontSize: 24,
-          ),
-        ),
+        title: const Text('ExpenseTracker App', style: TextStyle(fontSize: 24)),
         actions: [
           IconButton(
             onPressed: _openAddExpenseOverlay,
@@ -60,15 +85,8 @@ class _ExpensesState extends State<Expenses> {
         ],
       ),
       body: Column(
-        children: [
-          const Text('The chart'),
-          Expanded(
-            child: ExpensesList(
-              expenses: _registeredExpenses,
-              onRemoveExpense: _removeExpense,
-            ),
-          )
-        ],
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [const Text('The chart'), Expanded(child: mainContent)],
       ),
     );
   }
